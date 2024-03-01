@@ -2,12 +2,7 @@ const express = require('express');
 const router = express.Router();
 const UserController = require('../Controllers/UserController');
 
-// Route for creating a new user by admin
-// router.post('/', UserController.createUserByAdmin);
-
-// Route for fetching a user by ID
-router.get('/:userId', UserController.getUserById);
-
-// Add more user-related routes as needed, such as updating user information, deleting users, etc.
-
+router.get('/all-stars', UserController.getAllUsersWithStars); // This should come first
+router.get('/:userId', UserController.getUserById); // Specific routes come after more general routes
+router.get('/details/:userId', UserController.getUserDetails);
 module.exports = router;

@@ -1,25 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios"; 
+import "./Home.css"; 
 
-const Home = ({ isLoggedIn, userId }) => {
-  const [user, setUser] = useState(null);
+const Home = () => {
+  const navigate = useNavigate();
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUsers = async () => {
       try {
-        const response = await axios.get(`/auth/users/${userId}`);
-        setUser(response.data);
+        const response = await axios.get(
+          "http://localhost:3001/users/all-stars"
+        ); 
+        setUsers(response.data);
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error("Failed to fetch users:", error);
       }
     };
 
-    fetchUser();
-  }, [userId]);
+    fetchUsers();
+  }, []);
 
   return (
-    <div className='header' style={{ display: 'flex', justifyContent: 'center' }}>
-      <h1>היי {user ? user.username : ''}! ברוכים הבאים לבית ספר פסגות</h1>
+    <div>
+      <div className="home-container">
+        <div
+          className="card card-1"
+          onClick={() => navigate("/daily-question")}
+        >
+          <h2>החידה המתחלפת</h2>
+          <p>תרגיל היום שיבחן את הידע שלך.</p>
+        </div>
+        <div className="card card-2" onClick={() => navigate("/memory-game")}>
+          <h2>משחק זיכרון</h2>
+          <p>שפר את כוח הזיכרון שלך.</p>
+        </div>
+        <div className="card card-3" onClick={() => navigate("/race")}>
+          <h2>מבחן נגד הזמן</h2>
+          <p>פיצ׳רים עתידיים הישארו מעודכנים</p>
+        </div>
+      </div>
+      <div className="users-list">
+        <h3>רשימת כוכבים</h3>
+        <ul>
+          {users.map((user) => (
+            <li key={user.username}>
+              {user.username}: ⭐{user.stars}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 };

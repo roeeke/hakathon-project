@@ -1,0 +1,36 @@
+/* Card.css */
+
+.memory-game-cards-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    /* Set 3 columns */
+    grid-gap: 20px;
+    grid-template-rows: repeat(auto, 3);
+    /* Define 3 rows */
+}
+
+.memory-card {
+    min-height: 75px;
+    background-color: #f4f4f4;
+    /* Background color */
+    border-radius: 10px;
+    /* Border radius */
+    border: 1px solid #ddd;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: transform 0.5s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.card-content {
+    width: 100%;
+}
+
+.card-title {
+    margin: 0;
+    padding: 0;
+}

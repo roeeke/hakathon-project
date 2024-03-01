@@ -1,71 +1,58 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import "./NavBar.css"; // Ensure this CSS file exists and is correctly styled
 
-const NavBar = ({ isLoggedIn, onLogout }) => {
+const NavBar = ({ isLoggedIn, onLogout, userId }) => {
+  const [userDetails, setUserDetails] = useState({ userName: '', userStars: 0 });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (isLoggedIn && userId) {
+        try {
+          const response = await axios.get(`http://localhost:3001/users/details/${userId}`, {
+            withCredentials: true,
+          });
+          const { userName, userStars } = response.data;
+          setUserDetails({ userName, userStars });
+        } catch (error) {
+          console.error('Failed to fetch user details:', error);
+          onLogout();
+          navigate('/login');
+        }
+      }
+    };
+
+    fetchUserDetails();
+  }, [isLoggedIn, navigate, onLogout, userId]);
+
+  const handleLogoutClick = () => {
+    navigate('/login');
+  };
+
+  const handleHomeClick = () => {
+    navigate('/');
+  };
+
   return (
-    <nav className="navbar navbar-expand-lg ">
-      <Link className="navbar-brand" to="/">Psagot</Link>
-      <div className="collapse navbar-collapse justify-content-end">
-        <ul className="navbar-nav">
-          <li className="nav-item">
-            <Link className="nav-link" to="/">בית</Link>
-          </li>
-          {isLoggedIn ? (
-            <>
-              <li className="nav-item">
-                <button className="btn btn-link nav-link" onClick={onLogout}>התנתק</button>
-              </li>
-            </>
-          ) : (
-            <li className="nav-item">
-              <Link className="nav-link" to="/login">התחבר</Link>
-            </li>
-          )}
-        </ul>
+    <nav className="navbar">
+      <div className="navbar-left">
+        {isLoggedIn && (
+          <button className="logout-button" onClick={handleLogoutClick}>התנתק</button>
+        )}
+        <button className="logout-button" onClick={handleHomeClick}>בית</button>
       </div>
-      <style>
-        {`
-          .navbar-brand:hover,
-          .navbar-nav .nav-link:hover {
-            color: #bada55;
-          }
-          .navbar-brand{
-            color: white;
-          }
-          *{
-            box-sizing: border-box;
-            margin:0;
-            padding:0;
-          }
-          .navbar {
-            width: 100%;
-            height: 100%;
-            --s: 200px; /* control the size */
-            --c1: #1d1d1d;
-            --c2: #4e4f51;
-            --c3: #3c3c3c;
-          
-            background: repeating-conic-gradient(
-                  from 30deg,
-                  #0000 0 120deg,
-                  var(--c3) 0 180deg
-                )
-                calc(0.5 * var(--s)) calc(0.5 * var(--s) * 0.577),
-              repeating-conic-gradient(
-                from 30deg,
-                var(--c1) 0 60deg,
-                var(--c2) 0 120deg,
-                var(--c3) 0 180deg
-              );
-            background-size: var(--s) calc(var(--s) * 0.577);
-          }
-          .navbar-nav .nav-link {
-            color: white; /* Change text color to white */
-          }
-          
-        `}
-      </style>
+      <div className="navbar-right">
+        {isLoggedIn && (
+          <span className="user-info">
+            <span className="stars">⭐{userDetails.userStars}</span> שלום {userDetails.userName}!
+          </span>
+        )}
+        {!isLoggedIn && (
+          <Link className="login-link" to="/login">התחבר</Link>
+        )}
+      </div>
     </nav>
   );
 };

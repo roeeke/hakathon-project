@@ -1,0 +1,68 @@
+.home-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .card {
+    padding: 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  }
+  
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+  }
+  
+  /* Different background colors with linear gradients */
+  .card-1 {
+    background: linear-gradient(135deg, #6e8efb, #88c9f2);
+  }
+  
+  .card-2 {
+    background: linear-gradient(135deg, #f093fb, #f5576c);
+  }
+  
+  .card-3 {
+    background: linear-gradient(135deg, #e4ca05, #f3b200);
+  }
+  
+  /* Hover effect for each card */
+  .card-1:hover {
+    background: linear-gradient(135deg, #88c9f2, #6e8efb);
+  }
+  
+  .card-2:hover {
+    background: linear-gradient(135deg, #f5576c, #f093fb);
+  }
+  
+  .card-3:hover {
+    background: linear-gradient(135deg, #f3b200, #e4ca05);
+  }
+  
+  /* Home.css */
+
+.users-list {
+    width: 95vw;
+    margin: 20px;
+    padding: 10px;
+    background-color: #f0f0f0; /* Light grey background */
+    border-radius: 5px;
+  }
+  
+  .users-list h3 {
+    margin-bottom: 10px;
+  }
+  
+  .users-list ul {
+    list-style-type: none; /* Removes the default list bullet */
+    padding: 0;
+  }
+  
+  .users-list li {
+    margin-bottom: 5px;
+  }
+  

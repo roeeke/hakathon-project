@@ -1,86 +1,152 @@
-const Question = require('../Models/Question');
+const Question = require("../Models/Question");
+const User = require("../Models/User");
 
-// Controller to create a new daily question
 const createDailyQuestion = async (req, res) => {
-  const { type, content } = req.body;
-
   try {
-    const newQuestion = new Question({ type, content });
-    await newQuestion.save();
+    const questionExists = await Question.findOne({});
+    if (questionExists) {
+      return res.status(400).json({ message: "An initial question already exists." });
+    }
 
-    res.status(201).json({ message: 'Question created successfully', question: newQuestion });
+    const question = new Question({
+      content: req.body.content,
+      options: req.body.options
+    });
+
+    await question.save();
+    res.status(201).json({ message: "Initial question created successfully", question });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error", error });
   }
 };
 
-// Controller to fetch all daily questions
-const getAllDailyQuestions = async (req, res) => {
+const updateDailyQuestion = async (req, res) => {
   try {
-    const dailyQuestions = await Question.find({ type: 'daily' });
+    let question = await Question.findOne({});
+  
+    if (!question) {
+      question = new Question(req.body);
+    } else {
+      question.content = req.body.content;
+      question.options = req.body.options;
+    }
+  
+    await question.save();
 
-    res.status(200).json({ questions: dailyQuestions });
+    
+    await User.updateMany({}, { $set: { answeredDailyQuestion: false } });
+
+    res.json({ message: "Daily question updated successfully, and all users can answer again.", question });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error updating daily question or resetting user flags:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Controller to fetch a single daily question by ID
-const getDailyQuestionById = async (req, res) => {
-  const { questionId } = req.params;
 
+const getDailyQuestion = async (req, res) => {
   try {
+    const question = await Question.findOne({});
+    if (!question) return res.status(404).json({ message: "No daily question found" });
+    res.json(question);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+const submitAnswer = async (req, res) => {
+  const { selectedOption, questionId } = req.body;
+  try {
+    const user = await User.findById(req.cookies.userId);
     const question = await Question.findById(questionId);
 
-    if (question && question.type === 'daily') {
-      res.status(200).json({ question });
+    if (!user || !question) {
+      return res.status(404).json({ message: "User or question not found" });
+    }
+
+    if (user.answeredDailyQuestion === false) {
+      const isCorrect = question.options.some(option => option.isCorrect && option.text === selectedOption);
+
+      // Mark the user as having answered the question
+      user.answeredDailyQuestion = true;
+      user.lastAnswerSubmitted = new Date();
+
+      let message = "Incorrect answer!";
+      if (isCorrect) {
+        // Initially award 3 stars for correct answer
+        user.stars += 3;
+        message = "Correct answer! You earned 3 stars.";
+
+        await user.save();
+
+        // After saving, check if the user is among the first three correct responders
+        const topCorrectResponders = await User.find({ answeredDailyQuestion: true, stars: { $gte: 3 } })
+          .sort({ lastAnswerSubmitted: 1 })
+          .limit(3);
+        
+        const isTopCorrectResponder = topCorrectResponders.find(responder => responder.id.toString() === user.id.toString());
+        if (isTopCorrectResponder) {
+          // If the user is among the top 3 correct, award additional 3 stars (making it 6)
+          user.stars += 3;
+          await user.save();
+          message = "Amazing! You're among the first 3 to answer correctly and earned 6 stars!";
+        }
+      } else {
+        // Even if the answer is incorrect, save the attempt to prevent re-attempts
+        await user.save();
+      }
+
+      res.json({ message });
     } else {
-      res.status(404).json({ message: 'Daily question not found' });
+      res.status(400).json({ message: "You have already answered the daily question." });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error submitting answer:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Controller to update a daily question by ID
-const updateDailyQuestion = async (req, res) => {
-  const { questionId } = req.params;
-  const { content } = req.body;
 
+
+const checkIfAnswered = async (req, res) => {
   try {
-    const question = await Question.findByIdAndUpdate(questionId, { content }, { new: true });
+    const userId = req.cookies.userId; 
+    const user = await User.findById(userId);
 
-    if (question && question.type === 'daily') {
-      res.status(200).json({ message: 'Question updated successfully', question });
-    } else {
-      res.status(404).json({ message: 'Daily question not found' });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
+
+    res.json({ answered: user.answeredDailyQuestion });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error checking if answered:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// Controller to delete a daily question by ID
-const deleteDailyQuestion = async (req, res) => {
-  const { questionId } = req.params;
-
+const getTopResponders = async (req, res) => {
   try {
-    const question = await Question.findByIdAndDelete(questionId);
+    const topResponders = await User.find({ answeredDailyQuestion: true })
+      .sort({ lastAnswerSubmitted: 1 }) 
+      .limit(3) 
+      .select('username lastAnswerSubmitted -_id');
 
-    if (question && question.type === 'daily') {
-      res.status(200).json({ message: 'Question deleted successfully' });
-    } else {
-      res.status(404).json({ message: 'Daily question not found' });
-    }
+    res.json(topResponders);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error fetching top responders:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
 
 module.exports = {
-  createDailyQuestion,
-  getAllDailyQuestions,
-  getDailyQuestionById,
   updateDailyQuestion,
-  deleteDailyQuestion
+  getDailyQuestion,
+  submitAnswer,
+  createDailyQuestion,
+  checkIfAnswered,
+  getTopResponders
 };
